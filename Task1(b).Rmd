@@ -1,0 +1,51 @@
+---
+title: "Task 1"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require("dplyr")) install.packages("dplyr")
+if(!require("purrr")) install.packages("purrr")
+if(!require("ggplot2")) install.packages("ggplot2")
+
+library(dplyr)
+library(purrr)
+library(ggplot2)
+```
+
+## Task 1 - (b)
+First, I need to
+
+coll_mob80 = read.csv(file = "C:/Users/tsl11/Downloads/predoc_exercise/send/data/coll_mobility_1980.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+
+# checking if there is NA values(or, missing values) in par_q5, kq1_cond_parq5
+mean(is.na(coll_mob80$par_q5))
+mean(is.na(coll_mob80$kq1_par_q5))
+
+coll_mob80 = coll_mob80 %>%
+                filter(super_opeid > 0) %>%
+                arrange(par_q1) %>%
+                mutate(npar_q1 = count * par_q1) %>%
+                mutate(nkq5_parq1 = npar_q1*kq5_cond_parq1,
+                       cum_npq1 = cumsum(npar_q1)) %>%
+                mutate(bin = ntile(cum_npq1, 10))
+                
+vis_coll80 = coll_mob80 %>%
+                group_by(bin) %>%
+                summarize(wt_q1 = sum(npar_q1)/sum(count), wt_k5q1 = sum(nkq5_parq1)/sum(count))
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
