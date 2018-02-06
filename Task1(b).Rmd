@@ -2,9 +2,11 @@
 title: "Task 1"
 output: pdf_document
 ---
-
+I used R to do the visualization task for Task 1 - (b)
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# Checking for needed packages and installing
+
 if(!require("dplyr")) install.packages("dplyr")
 if(!require("purrr")) install.packages("purrr")
 if(!require("ggplot2")) install.packages("ggplot2")
@@ -14,38 +16,40 @@ library(purrr)
 library(ggplot2)
 ```
 
-## Task 1 - (b)
-First, I need to
+## Task 1 - (b) Visualization
+First, I need to manipulate data to produce student-weigthed mean access rate and student-weighted mean success rate.
 
-coll_mob80 = read.csv(file = "C:/Users/tsl11/Downloads/predoc_exercise/send/data/coll_mobility_1980.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+```{r, echo=FALSE}
+# Reading in Data
+coll_mob80 = read.csv(file = "/Users/tammylee/Documents/Career Development/send/data/coll_mobility_1980.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
 
-# checking if there is NA values(or, missing values) in par_q5, kq1_cond_parq5
+# checking if there is NA values(or, missing values) in access rate and success rate
 mean(is.na(coll_mob80$par_q5))
 mean(is.na(coll_mob80$kq1_par_q5))
 
 coll_mob80 = coll_mob80 %>%
-                filter(super_opeid > 0) %>%
-                arrange(par_q1) %>%
-                mutate(npar_q1 = count * par_q1) %>%
-                mutate(nkq5_parq1 = npar_q1*kq5_cond_parq1,
-                       cum_npq1 = cumsum(npar_q1)) %>%
-                mutate(bin = ntile(cum_npq1, 10))
+                filter(super_opeid > 0) %>%             # using only colleges with sufficient data
+                arrange(par_q1) %>%                     # reordering observation by access rate
+                mutate(npar_q1 = count*par_q1) %>%      # generating student weighted access rate
+                mutate(wt_kq5_parq1 = count*kq5_cond_parq1, # generating student weighted success rate
+                       cum_nstudent = cumsum(count)) %>%    # creating cumulative sum of counts
+                mutate(bin = ntile(cum_nstudent, 10)) # creating 10 equally sized bins based on cumulative sum of students
                 
+# extracting a separate data frame for visualization
 vis_coll80 = coll_mob80 %>%
-                group_by(bin) %>%
-                summarize(wt_q1 = sum(npar_q1)/sum(count), wt_k5q1 = sum(nkq5_parq1)/sum(count))
-
-
-```{r cars}
-summary(cars)
+                group_by(bin) %>%  # calculating student-weighted mean value by each bin
+                summarize(wt_q1 = sum(npar_q1)/sum(count), wt_k5q1 = sum(wt_kq5_parq1)/sum(count))
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r}
+# creating visualization using a separate dataframe
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+vis_coll80 %>% ggplot(aes(x = wt_q1, y = wt_k5q1)) + geom_point() + geom_line() + theme_bw() +
+  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), panel.grid.minor.y = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(color = "black", linetype = "solid"),
+        plot.title = element_text(hjust=0.5), plot.subtitle = element_text(hjust=0.5), plot.caption = element_text(hjust=0, face="italic")) + 
+  scale_x_continuous("Access: Percent of Parents in Bottom Quintile", breaks = seq(0, 0.3, length.out=7), labels = scales::percent) +
+  scale_y_continuous("Success Rate: P(Child in Q5 | Par in Q1)", breaks = seq(0, 0.5, length.out=11), labels = scales::percent) +
+  labs(title = "Cross-sectional Relationship between Success Rates vs. Access", subtitle = "Using 1980 Birth Cohort Data", caption = " Note: Each plot represents average access rate and average success rate of 10% of students, ranging from \n           the lowest to highest access rate.")
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
